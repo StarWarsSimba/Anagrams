@@ -58,7 +58,7 @@ The key components of our anagram finder will be
 - A class representing a _bag_ of letters.  In math, a _bag_ is also called a _multiset_.
 Whereas a set either contains an element or does not contain it, a _bag_ may
 contain zero or more of a given element.  For example, a _bag_ will allow
-us to record that we "computer science" contains 3 `c` but only one `p`.
+us to record that "computer science" contains 3 `c` but only one `p`.
 We will construct a class `LetterBag` in Python module `letter_bag.py` to
 represent bags of letters.  Since this module does not depend on other
 modules in our project, we will construct and test it first. 
@@ -71,26 +71,24 @@ program, called `anagram.py`.  Since this algorithm depends heavily on
 the `LetterBag` class, we will construct `anagram.py` after constructing
 and testing `letter_bag.py`. 
 
-In addition to these two modules that you will construct, we will need
-several supporting modules. 
+In addition to these two modules that you will construct, you will use
+several supporting modules that I have provided.
 
 - `config.py` will contain configuration choices like the location of the
 word list file.  I have provided a starter version of this file for you,
 along with several possible word lists in the `data` directory. 
 - `columns.py` provides a function that arranges a list of strings
 in columns.  This can be helpful because the number of anagrams discovered
-by our program is often large.  `columns.py` is provided for you.  
+by our program is often large.  
 - `word_heuristic.py` provides a "scoring" function that we can use to
 sort the word list, so that longer words and words containing less
 common letters (e.g., `q` and `z`) are tried before short words containing
 only the most common letter.  This can make the search a little faster,
 and make interesting anagrams more likely to appear near the beginning
-of a long list of anagrams.  The `word_heuristic` module is provided for
-you. 
+of a long list of anagrams.  
 - `filters.py` provides a set of functions for reducing the size of a
 list of discovered anagrams, _after_ we have found all possible anagrams.
-You will write most of `filters.py`  _after_ you have constructed and
-tested `anagrams.py`. 
+
 
 ## Step 1:  The `LetterBag` class. 
 
@@ -454,18 +452,10 @@ and class `Test_LetterBag` (4 methods).
 ## Searching for anagrams
 
 With the `LetterBag` class in hand, we are
-ready to create our main application module.
-Start by creating 
+ready to create our main application module
+in `anagram.py`. 
 
-As noted above, we will use a recursive search to
-find combinations of words from a word list that
-form anagrams.  Because this recursive search may
-consider the same word many times, in different
-combinations with others, it is worthwhile to
-convert the whole word list to `LetterBag` objects just
-once before searching.  This should be straightforward,
-but it's worthwhile to build and test it before moving on
-to the main search algorithm. 
+
 
 ### Obtaining the list
 
@@ -515,6 +505,19 @@ def read_word_list(f: io.TextIOBase) -> list[str]:
     # You fill this in
 ```
 
+Note that the argument to `read_word_list` is an open file,
+not the name of a file or a file path.  The usual way of
+calling `read_word_list` would be
+
+```python
+with open(path, "r") as f: 
+     words = read_word_list(f)
+```
+
+We choose to do it this way because our command line interface,
+which we will introduce shortly, will open the file for us
+or provide an error message. 
+
 We will not bother to normalize words in the word list,
 leaving that to our `LetterBag` module, but we will
 use the `strip()` method to remove leading and trailing
@@ -525,10 +528,11 @@ Although the `read_word_list` function is simple, it is a good
 idea to get started with our `test_anagram` module in `test_anagram.py`.
 
 ```python
-"""Test cases for anagram.py as well as word_heuristic.py"""
+"""Test cases for anagram.py"""
 
 import unittest
 import anagram
+from letter_bag import LetterBag
 
 
 class Test_Read(unittest.TestCase):
@@ -568,12 +572,26 @@ The `limit` and `seed` arguments of search are _keyword arguments_ with
 default values, so we can omit them when we call
 the `search` function if the defaults are acceptable. 
 
+Note that the `candidates` argument for `search` is a
+list of `LetterBag` objects, rather than a list of strings. 
+Also we made the `take` method in class `LetterBag` operate
+on a pair of `LetterBags` (`self` and `other`) rather than
+a `LetterBag` and a `str`.  
+Because this recursive search may
+consider the same word many times, in different
+combinations with others, it is worthwhile to
+convert the whole word list to `LetterBag` objects just
+once before searching.  
+
+
 Once we've got the basic algorithm working, we will find that
 our biggest problem is often producing _too many_ boring combinations of
 short words.  
 We'll use the `seed` argument in a refinement
 shortly, and use `limit` to prevent it from spewing thousands
-and thousands of anagrams.  But first, we need to make it work.
+and thousands of anagrams.  But first, we need to make
+the basic algorithm work.
+
 To test our algorithm before we have put various spew-limiting
 measures in place, we will initially test with a tiny
 list of candidate words.  In `data/cs_sample.txt` we find this
@@ -595,7 +613,8 @@ This list was chosen to produce exactly two anagrams for "Computer Science!":
 either anagram.  The capitalization and punctuation in "Computer Science!"
 should be ignored.
 
-Here's a test case (in `test_anagram.py`) we want our search function to pass: 
+Here's a test case (in `test_anagram.py`)
+that we will want our search function to pass.  
 
 ```python
 class Test_Anagram_Search(unittest.TestCase):
@@ -633,8 +652,8 @@ def search(letters: LetterBag,
     # nexted function, and need not be passed to it.
 
     def _search(letters: LetterBag,  # The letters we can draw from
-                pos: int,  # Position in list of word list letterbags
-                phrase: list[str]  # The phrase we are building
+                pos: int,            # Position in list of word list letterbags
+                phrase: list[str]    # The phrase we are building
                 ):
         """Recursive function has the effect of adding phrases to result"""
         ### Your code for body of _search goes here
@@ -646,7 +665,7 @@ def search(letters: LetterBag,
     return result
 ```
 
-Note that `search` has a _result_, but `_search` has an effect.  
+Note that `search` has a _result_, but `_search` has an _effect_.  
 
 Recall that our list `candidates` will contain the `LetterBag` representations
 of "transform", "mop", "income", "secret", "cup", "use", and "eccentric".  Let's
@@ -701,15 +720,25 @@ Thus in outline your `_search` function should follow pseudocode like this:
 ```text
 for candidates in position `pos` .. length of candidates list: 
     if this candidate can be constructed from `letters`:
+        extended phrase = phrase with word added
         if using it would leave `letters` empty (length 0): 
-            add it to `phrase`, and add the `phrase` to `result`
+            add the extended phrase to `result`
         else: 
-            make a recursive call to try using this word, adding the
-               candidate word to phrase and searching from `pos + 1`   
+            make a recursive call to try using this word,  
+              with the extended phrase, the remaining letters,
+              and searching from `pos + 1`   
 ```
+Note that we create an extended phrase, rather than appending the
+word to the phrase that was passed as an argument.  This again is to
+avoid side effects through aliasing:  We don't want to change the
+phrase that was passed as an argument!  We can use the same tactic we
+used in the `take` method of `LetterBag`, making a copy of `phrase`
+and appending to the copy. 
+
 
 In my sample solution, this pseudocode expands to about
-10 lines of Python code.  To add a phrase to `result`,
+12 lines of Python code (excluding logging statements I 
+added for debugging). 
 I convert the list of `str` values into a single `str`
 using the `join` method.  Before the loop, I include a couple
 lines to implement the limit on number of anagrams we will produce: 
@@ -720,7 +749,7 @@ lines to implement the limit on number of anagrams we will produce:
 ```
 
 Remember that `LetterBag.contains` and `LetterBag.take` are methods that
-return results.  Remember that we went to some trouble to avoid side effects
+return results.  We went to some trouble to avoid side effects
 in `LetterBag.take`, which returns a new `LetterBag` object.
 You will need this to make the recursive call work
 without messing up the next iteration of the loop! 
@@ -776,7 +805,7 @@ normalization.)
 
 There is more code to write, but if you have gotten this far successfully, you are
 over the hard part.  Everything else is refinement to make the application more
-usable.  I'll provide quite a bit of it, but leave some to you. 
+usable.  I'll provide quite a bit of it, but leave a bit to you. 
 
 ## Making it an application
 
@@ -832,14 +861,14 @@ The most straightforward version of your main program (ignoring the many optiona
 arguments) would look like this: 
 
 ```python
-def main(args: argparse.Namespace):
+def main():
     """Search for multi-word anagrams."""
     args = cli()  
     bag = LetterBag(args.phrase)
     words = read_word_list(open(config.DICT, "r"))
     candidates = [LetterBag(word) for word in words]
     anagrams = search(bag, candidates, limit=args.limit)
-   print(anagrams)
+    print(anagrams)
 
 
 if __name__ == "__main__":
@@ -912,13 +941,13 @@ source file `test_anagram.py`.  (Add the appropriate `import` statement
 there, too.)
 
 ```python
-    def test_search_sorted(self):
+        def test_search_sorted(self):
         """Without constraints on the search"""
         with open("data/cs_sample.txt") as f:
             words = anagram.read_word_list(f)
         words.sort(key=word_heuristic.score, reverse=True)
-        candidates = [letter_bag.LetterBag(word) for word in words]
-        target = letter_bag.LetterBag("computer science")
+        candidates = [LetterBag(word) for word in words]
+        target = LetterBag("computer science")
         anagrams = anagram.search(target, candidates)
         self.assertListEqual(anagrams, ["eccentric mop use", "income secret cup"])
 ```
