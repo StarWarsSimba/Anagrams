@@ -60,13 +60,12 @@ def search(letters: LetterBag,
         for i in range(pos, len(candidates), 1):
             c = candidates[i]
             if letters.contains(c):
-                phrase.append(str(c))
+                new_phrase = phrase + [str(c)]
                 new_letters = letters.take(c)
                 if new_letters.length == 0:
-                    result.append(phrase)
-                    phrase.clear()
+                    result.append(" ".join(new_phrase))
                 else:
-                    _search(new_letters, i + 1, phrase)
+                    _search(new_letters, i + 1, new_phrase)
 
     # Initiate a single search at position 0 with an empty phrase,
     # after seeding if appropriate
