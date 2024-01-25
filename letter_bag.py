@@ -50,7 +50,7 @@ class LetterBag:
         other LetterBag are contained in this LetterBag.
         """
         for i in other.letters:
-            if i not in self.letters:
+            if i not in self.letters or self.letters[i] == 0:
                 return False
             if self.letters[i] < other.letters[i]:
                 return False
