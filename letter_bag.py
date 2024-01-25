@@ -76,8 +76,3 @@ class LetterBag:
             bag.letters[letter] -= count
             bag.length -= count
         return bag
-
-x = LetterBag('aaabb!')
-y = LetterBag('aabb')
-print(x.contains(y))
-print(y.contains(x))
